@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Kevin Wright" />
+
+<meta name="date" content="2024-04-17" />
+
+<title>Lucid printing of floating-point vectors</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Lucid printing of floating-point
+vectors</h1>
+<h4 class="author">Kevin Wright</h4>
+<h4 class="date">2024-04-17</h4>
+
+
+
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;knitr&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>    opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">fig.align=</span><span class="st">&quot;center&quot;</span>, <span class="at">fig.width=</span><span class="dv">6</span>, <span class="at">fig.height=</span><span class="dv">6</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">options</span>(<span class="at">width=</span><span class="dv">90</span>)</span></code></pre></div>
+</div>
+<div id="abstract" class="section level2">
+<h2>Abstract</h2>
+<p><span class="citation">Farquhar and Farquhar (1891)</span> provide a
+humorous quote about tables:</p>
+<blockquote>
+<p>The graphic method has considerable superiority for the exposition of
+statistical facts over the tabular. A heavy bank of figures is
+grievously wearisome to the eye, and the popular mind is as incapable of
+drawing any useful lessons from it as of extracting sunbeams from
+cucumbers.</p>
+</blockquote>
+<p>The <code>lucid</code> package intends to make your life easier by
+helping you extract information from tables. The package has functions
+for printing vectors and tables of floating-point numbers in a
+human-friendly format. An application is presented for printing of
+variance components from mixed models.</p>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Numerical output from R is often in scientific notation, which can
+make it difficult to quickly glance at numbers and understand the
+relative sizes of the numbers. This not a new phenomenon. Before R had
+been created, <span class="citation">Finney (1988)</span> had this to
+say about numerical output:</p>
+<blockquote>
+<p>Certainly, in initiating analyses by standard software or in writing
+one’s own software, the aim should be to have output that is easy to
+read and easily intelligible to others. … Especially undesirable is the
+so-called ‘scientific notation’ for numbers in which every number is
+shown as a value between 0.0 and 1.0 with a power of 10 by which it must
+be multiplied. For example:</p>
+<pre><code>0.1234E00 is 0.1234
+0.1234E02 is 12.34
+0.1234E-1 is 0.01234</code></pre>
+<p>This is an abomination which obscures the comparison of related
+quantities; tables of means or of analyses of variance become very
+difficult to read. It is acceptable as a default when a value is
+unexpectedly very much larger or smaller than its companions, but its
+appearance as standard output denotes either lazy programming or failure
+to use good software properly. Like avoidance of ‘E’, neat arrangement
+of output values in columns, with decimal points on a vertical line,
+requires extra effort by a programmer but should be almost mandatory for
+any software that is to be used often.</p>
+</blockquote>
+<p>One recommendation for improving the display of tables of numbers is
+to round numbers to 2 <span class="citation">(Wainer 1997)</span> or 3
+<span class="citation">Clark (1965)</span> digits for the following
+reasons:</p>
+<ol style="list-style-type: decimal">
+<li>We cannot <em>comprehend</em> more than three digits very
+easily.</li>
+<li>We seldom <em>care</em> about accuracy of more than three
+digits.</li>
+<li>We can rarely <em>justify</em> more than three digits of accuracy
+statistically.</li>
+</ol>
+<p>An alternative to significant digits is the concept of <em>effective
+digits</em> <span class="citation">Kozak et al. (2011)</span>, which
+considers the amount of variation in the data.</p>
+<p>In R, the <code>round()</code> and <code>signif()</code> functions
+can be used to round to 3 digits of accuracy, but those functions can
+still print results in scientific notation and leave much to be desired.
+The <code>lucid</code> package provides functions to improve the
+presentation of floating point numbers in a clear (or lucid) way that
+makes interpretation of the numbers immediately apparent.</p>
+<p>Consider the following vector of coefficients from a fitted
+model:</p>
+<pre><code>##                    effect
+## (Intercept)  1.135000e+02
+## A           -1.350000e+01
+## B            4.500000e+00
+## C            2.450000e+01
+## C1           6.927792e-14
+## C2          -1.750000e+00
+## D            1.650000e+01</code></pre>
+<p>Questions of interest about the coefficients might include:</p>
+<ol style="list-style-type: decimal">
+<li>Which coefficient is zero?</li>
+<li>How large is the intercept?</li>
+</ol>
+<p>Both questions can be answered using the output shown above, but it
+takes too much effort to answer the questions. Now examine the same
+vector of coefficients with prettier formatting:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">require</span>(<span class="st">&quot;lucid&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits=</span><span class="dv">7</span>) <span class="co"># knitr defaults to 4, R console uses 7</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">lucid</span>(df1)</span></code></pre></div>
+<pre><code>##             effect
+## (Intercept) 114   
+## A           -13.5 
+## B             4.5 
+## C            24.5 
+## C1            0   
+## C2           -1.75
+## D            16.5</code></pre>
+<p>Which coefficient is zero? How large is the intercept?</p>
+<p>Printing the numbers with the <code>lucid()</code> function has made
+the questions much easier to answer.</p>
+<p>The sequence of steps used by <code>lucid()</code> to format and
+print the output is.</p>
+<ol style="list-style-type: decimal">
+<li>Zap small numbers to zero using <code>zapsmall()</code>.</li>
+<li>Round using 3 significant digits (user controllable option).</li>
+<li>Drop trailing zeros.</li>
+<li>Align numbers at the decimal point (text format).</li>
+</ol>
+<p>The <code>lucid</code> package contains a generic function
+<code>lucid()</code> with specific methods for numeric vectors, data
+frames, and lists. The method for data frames applies formatting to each
+numeric column and leaves other columns unchanged. The
+<code>lucid()</code> function is primarily a <em>formatting</em>
+function, the results of which are passed to the regular
+<code>print()</code> functions.</p>
+</div>
+<div id="example-antibiotic-effectiveness" class="section level2">
+<h2>Example: Antibiotic effectiveness</h2>
+<p><span class="citation">Wainer and Larsen (2009)</span> present data
+published by Will Burtin in 1951 on the effectiveness of antibiotics
+against 16 types of bacteria. The data is included in the
+<code>lucid</code> package as a dataframe called
+<code>antibiotic</code>. The default view of this data is:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">print</span>(antibiotic)</span></code></pre></div>
+<pre><code>##                      bacteria penicillin streptomycin neomycin gramstain
+## 1        Aerobacter aerogenes    870.000         1.00    1.600       neg
+## 2            Brucella abortus      1.000         2.00    0.020       neg
+## 3            Escherichia coli    100.000         0.40    0.100       neg
+## 4       Klebsiella pneumoniae    850.000         1.20    1.000       neg
+## 5  Mycobacterium tuberculosis    800.000         5.00    2.000       neg
+## 6            Proteus vulgaris      3.000         0.10    0.100       neg
+## 7      Pseudomonas aeruginosa    850.000         2.00    0.400       neg
+## 8          Salmonella typhosa      1.000         0.40    0.008       neg
+## 9   Salmonella schottmuelleri     10.000         0.80    0.090       neg
+## 10         Bacillis anthracis      0.001         0.01    0.007       pos
+## 11     Diplococcus pneumoniae      0.005        11.00   10.000       pos
+## 12       Staphylococcus albus      0.007         0.10    0.001       pos
+## 13      Staphylococcus aureus      0.030         0.03    0.001       pos
+## 14      Streptococcus fecalis      1.000         1.00    0.100       pos
+## 15  Streptococcus hemolyticus      0.001        14.00   10.000       pos
+## 16     Streptococcus viridans      0.005        10.00   40.000       pos</code></pre>
+<p>Due to the wide range in magnitude of the values, nearly half of the
+floating-point numbers in the default view contain trailing zeros after
+the decimal, which adds significant clutter and impedes interpretation.
+The <code>lucid()</code> display of the data is:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">lucid</span>(antibiotic)</span></code></pre></div>
+<pre><code>##                      bacteria penicillin streptomycin neomycin gramstain
+## 1        Aerobacter aerogenes    870             1       1.6         neg
+## 2            Brucella abortus      1             2       0.02        neg
+## 3            Escherichia coli    100             0.4     0.1         neg
+## 4       Klebsiella pneumoniae    850             1.2     1           neg
+## 5  Mycobacterium tuberculosis    800             5       2           neg
+## 6            Proteus vulgaris      3             0.1     0.1         neg
+## 7      Pseudomonas aeruginosa    850             2       0.4         neg
+## 8          Salmonella typhosa      1             0.4     0.008       neg
+## 9   Salmonella schottmuelleri     10             0.8     0.09        neg
+## 10         Bacillis anthracis      0.001         0.01    0.007       pos
+## 11     Diplococcus pneumoniae      0.005        11      10           pos
+## 12       Staphylococcus albus      0.007         0.1     0.001       pos
+## 13      Staphylococcus aureus      0.03          0.03    0.001       pos
+## 14      Streptococcus fecalis      1             1       0.1         pos
+## 15  Streptococcus hemolyticus      0.001        14      10           pos
+## 16     Streptococcus viridans      0.005        10      40           pos</code></pre>
+<p>The <code>lucid()</code> display is dramatically simplified,
+providing a clear picture of the effectiveness of the antibiotics
+against bacteria. This view of the data matches exactly the appearance
+of Table 1 in <span class="citation">Wainer and Larsen
+(2009)</span>.</p>
+<p>A stem-and-leaf plot is a semi-graphical display of data, in that the
+<em>positions</em> of the numbers create a display similar to a
+histogram. In a similar manner, the <code>lucid()</code> output is a
+semi-graphical view of the data. The figure below shows a dotplot of the
+penicillin values on a reverse log10 scale. The values are also shown
+along the right axis in <code>lucid()</code> format. Note the similarity
+in the overall shape of the dots and the positions of the left-most
+significant digit in the numerical values along the right axis.</p>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+</div>
+<div id="example-using-lucid-with-broom" class="section level2">
+<h2>Example: Using <code>lucid</code> with <code>broom</code></h2>
+<p>The <code>broom</code> package by <span class="citation">Robinson
+(2016)</span> can be used to collect statistics from fitted models into
+tidy data frames. For example, using the <code>Orange</code> tree data,
+it is possible to fit a separate regression line for each tree. (The
+straight-line regression here is not entirely sensible, but illustrates
+a point.)</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">require</span>(dplyr)</span></code></pre></div>
+<pre><code>## Loading required package: dplyr</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">require</span>(broom)</span></code></pre></div>
+<pre><code>## Loading required package: broom</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>Orange <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(Tree) <span class="sc">%&gt;%</span> <span class="fu">do</span>(<span class="fu">tidy</span>(<span class="fu">lm</span>(circumference <span class="sc">~</span> age, <span class="at">data=</span>.)))</span></code></pre></div>
+<pre><code>## # A tibble: 10 × 6
+## # Groups:   Tree [5]
+##    Tree  term        estimate std.error statistic   p.value
+##    &lt;ord&gt; &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 3     (Intercept)  19.2      5.86         3.28 0.0221   
+##  2 3     age           0.0811   0.00563     14.4  0.0000290
+##  3 1     (Intercept)  24.4      6.54         3.73 0.0135   
+##  4 1     age           0.0815   0.00628     13.0  0.0000485
+##  5 5     (Intercept)   8.76     8.18         1.07 0.333    
+##  6 5     age           0.111    0.00785     14.1  0.0000318
+##  7 2     (Intercept)  20.0      9.35         2.13 0.0859   
+##  8 2     age           0.125    0.00898     13.9  0.0000343
+##  9 4     (Intercept)  14.6     11.2          1.30 0.249    
+## 10 4     age           0.135    0.0108      12.5  0.0000573</code></pre>
+<p>Extracting information from the sea of numbers above is difficult.
+The <code>lucid</code> function comes to the rescue, simply by adding
+one more step to the sequence of pipes.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>Orange <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(Tree) <span class="sc">%&gt;%</span> <span class="fu">do</span>(<span class="fu">tidy</span>(<span class="fu">lm</span>(circumference <span class="sc">~</span>  age, <span class="at">data=</span>.))) <span class="sc">%&gt;%</span> lucid</span></code></pre></div>
+<pre><code>##    Tree        term estimate std.error statistic   p.value
+## 1     3 (Intercept)  19.2      5.86         3.28 0.0221   
+## 2     3         age   0.0811   0.00563     14.4  0.000029 
+## 3     1 (Intercept)  24.4      6.54         3.73 0.0135   
+## 4     1         age   0.0815   0.00628     13    0.0000485
+## 5     5 (Intercept)   8.76     8.18         1.07 0.333    
+## 6     5         age   0.111    0.00785     14.1  0.0000318
+## 7     2 (Intercept)  20        9.35         2.13 0.0859   
+## 8     2         age   0.125    0.00898     13.9  0.0000343
+## 9     4 (Intercept)  14.6     11.2          1.3  0.249    
+## 10    4         age   0.135    0.0108      12.5  0.0000573</code></pre>
+<p>After formatting, information in the table almost jumps out at the
+reader, reducing the amount of cognitive effort needed for
+interpretation.</p>
+</div>
+<div id="example-application-to-mixed-models" class="section level2">
+<h2>Example: Application to mixed models</h2>
+<p>During the process of iterative fitting of mixed models, it is often
+useful to compare fits of different models to data, for example using
+loglikelihood or AIC values, or with the help of residual plots. It can
+also be very informative to inspect the estimated values of variance
+components.</p>
+<p>To that end, the generic <code>VarCorr()</code> function found in the
+<code>nlme</code> <span class="citation">Pinheiro et al. (2014)</span>
+and <code>lme4</code> <span class="citation">Bates et al. (2014)</span>
+packages can be used to print variance estimates from fitted models. The
+<code>VarCorr()</code> function is not available for models obtained
+using the <code>asreml</code> <span class="citation">Butler
+(2009)</span> package.</p>
+<p>The <code>lucid</code> package provides a generic function called
+<code>vc()</code> that provides a unified interface for extracting the
+variance components from fitted models obtained from the
+<code>asreml</code>, <code>lme4</code>, <code>nlme</code>, and
+<code>rjags</code> packages. The <code>vc()</code> function has methods
+specific to each package that make it easy to extract the estimated
+variances and correlations from fitted models and formats the results
+using the <code>lucid()</code> function.</p>
+<p><span class="citation">Pearce et al. (1988)</span> suggest showing
+four significant digits for the error mean square and two decimal places
+digits for <span class="math inline">\(F\)</span> values. The
+<code>lucid()</code> function uses a similar philosophy, presenting the
+variances with four significant digits and <code>asreml</code> <span class="math inline">\(Z\)</span> statistics with two significant
+digits.</p>
+<div id="vc-example-1---rail-data" class="section level3">
+<h3>vc() example 1 - Rail data</h3>
+<p>The following simple example illustrates use of the <code>vc()</code>
+function for identical REML models in the <code>nlme</code>,
+<code>lme4</code>, and <code>asreml</code> packages. The travel times of
+ultrasonic waves in six steel rails was modeled as an overall mean, a
+random effect for each rail, and a random residual. The package
+<code>rjags</code> is used to fit a similar Bayesian model inspired by
+<span class="citation">Wilkinson (2014)</span>.</p>
+</div>
+</div>
+<div id="nlme" class="section level2">
+<h2>nlme</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">require</span>(<span class="st">&quot;nlme&quot;</span>)</span></code></pre></div>
+<pre><code>## Loading required package: nlme</code></pre>
+<pre><code>## 
+## Attaching package: &#39;nlme&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     collapse</code></pre>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="fu">data</span>(Rail)</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>mn <span class="ot">&lt;-</span> <span class="fu">lme</span>(travel<span class="sc">~</span><span class="dv">1</span>, <span class="at">random=</span><span class="sc">~</span><span class="dv">1</span><span class="sc">|</span>Rail, <span class="at">data=</span>Rail)</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="fu">vc</span>(mn)</span></code></pre></div>
+<pre><code>##       effect variance stddev
+##  (Intercept)   615.3  24.81 
+##     Residual    16.17  4.021</code></pre>
+</div>
+<div id="lme4" class="section level1">
+<h1>lme4</h1>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="fu">require</span>(<span class="st">&quot;lme4&quot;</span>)</span></code></pre></div>
+<pre><code>## Loading required package: lme4</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;lme4&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:nlme&#39;:
+## 
+##     lmList</code></pre>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>m4 <span class="ot">&lt;-</span> <span class="fu">lmer</span>(travel<span class="sc">~</span><span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>Rail), <span class="at">data=</span>Rail)</span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a><span class="fu">vc</span>(m4)</span></code></pre></div>
+<pre><code>##       grp        var1 var2   vcov  sdcor
+##      Rail (Intercept) &lt;NA&gt; 615.3  24.81 
+##  Residual        &lt;NA&gt; &lt;NA&gt;  16.17  4.021</code></pre>
+</div>
+<div id="asreml" class="section level1">
+<h1>asreml</h1>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="co"># require(&quot;asreml&quot;)</span></span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a><span class="co"># ma &lt;- asreml(travel~1, random=~Rail, data=Rail)</span></span>
+<span id="cb34-3"><a href="#cb34-3" tabindex="-1"></a><span class="co"># vc(ma)</span></span>
+<span id="cb34-4"><a href="#cb34-4" tabindex="-1"></a><span class="do">##         effect component std.error z.ratio constr</span></span>
+<span id="cb34-5"><a href="#cb34-5" tabindex="-1"></a><span class="do">##  Rail!Rail.var    615.3      392.6     1.6    pos</span></span>
+<span id="cb34-6"><a href="#cb34-6" tabindex="-1"></a><span class="do">##     R!variance     16.17       6.6     2.4    pos</span></span></code></pre></div>
+</div>
+<div id="jags" class="section level1">
+<h1>JAGS</h1>
+<p>In a Bayesian model all effects can be considered as random.</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="fu">require</span>(<span class="st">&quot;nlme&quot;</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a><span class="fu">data</span>(Rail)</span>
+<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a><span class="fu">require</span>(<span class="st">&quot;rjags&quot;</span>)</span>
+<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a>m5 <span class="ot">&lt;-</span></span>
+<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a><span class="st">&quot;model {</span></span>
+<span id="cb35-6"><a href="#cb35-6" tabindex="-1"></a><span class="st">for(i in 1:nobs){</span></span>
+<span id="cb35-7"><a href="#cb35-7" tabindex="-1"></a><span class="st">  travel[i] ~ dnorm(mu + theta[Rail[i]], tau)</span></span>
+<span id="cb35-8"><a href="#cb35-8" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb35-9"><a href="#cb35-9" tabindex="-1"></a><span class="st">for(j in 1:6) {</span></span>
+<span id="cb35-10"><a href="#cb35-10" tabindex="-1"></a><span class="st">  theta[j] ~ dnorm(0, tau.theta)</span></span>
+<span id="cb35-11"><a href="#cb35-11" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb35-12"><a href="#cb35-12" tabindex="-1"></a><span class="st">mu ~ dnorm(50, 0.0001) # Overall mean. dgamma() </span></span>
+<span id="cb35-13"><a href="#cb35-13" tabindex="-1"></a><span class="st">tau ~ dgamma(1, .001)</span></span>
+<span id="cb35-14"><a href="#cb35-14" tabindex="-1"></a><span class="st">tau.theta ~ dgamma(1, .001)</span></span>
+<span id="cb35-15"><a href="#cb35-15" tabindex="-1"></a><span class="st">residual &lt;- 1/sqrt(tau)</span></span>
+<span id="cb35-16"><a href="#cb35-16" tabindex="-1"></a><span class="st">sigma.rail &lt;- 1/sqrt(tau.theta)</span></span>
+<span id="cb35-17"><a href="#cb35-17" tabindex="-1"></a><span class="st">}&quot;</span></span>
+<span id="cb35-18"><a href="#cb35-18" tabindex="-1"></a>jdat <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">nobs=</span><span class="fu">nrow</span>(Rail), <span class="at">travel=</span>Rail<span class="sc">$</span>travel, <span class="at">Rail=</span>Rail<span class="sc">$</span>Rail)</span>
+<span id="cb35-19"><a href="#cb35-19" tabindex="-1"></a>jinit <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">mu=</span><span class="dv">50</span>, <span class="at">tau=</span><span class="dv">1</span>, <span class="at">tau.theta=</span><span class="dv">1</span>)</span>
+<span id="cb35-20"><a href="#cb35-20" tabindex="-1"></a>tc5 <span class="ot">&lt;-</span> <span class="fu">textConnection</span>(m5)</span>
+<span id="cb35-21"><a href="#cb35-21" tabindex="-1"></a>j5 <span class="ot">&lt;-</span> <span class="fu">jags.model</span>(tc5, <span class="at">data=</span>jdat, <span class="at">inits=</span>jinit, <span class="at">n.chains=</span><span class="dv">2</span>, <span class="at">quiet=</span><span class="cn">TRUE</span>)</span>
+<span id="cb35-22"><a href="#cb35-22" tabindex="-1"></a><span class="fu">close</span>(tc5)</span>
+<span id="cb35-23"><a href="#cb35-23" tabindex="-1"></a>c5 <span class="ot">&lt;-</span> <span class="fu">coda.samples</span>(j5, <span class="fu">c</span>(<span class="st">&quot;mu&quot;</span>,<span class="st">&quot;theta&quot;</span>, <span class="st">&quot;residual&quot;</span>, <span class="st">&quot;sigma.rail&quot;</span>), </span>
+<span id="cb35-24"><a href="#cb35-24" tabindex="-1"></a>                   <span class="at">n.iter=</span><span class="dv">100000</span>, <span class="at">thin=</span><span class="dv">5</span>, <span class="at">progress.bar=</span><span class="st">&quot;none&quot;</span>)</span></code></pre></div>
+<p>Compare the JAGS point estimates and quantiles (above) with the
+results from <code>lme4</code> below.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a>m4</span></code></pre></div>
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: travel ~ 1 + (1 | Rail)
+##    Data: Rail
+## REML criterion at convergence: 122.177
+## Random effects:
+##  Groups   Name        Std.Dev.
+##  Rail     (Intercept) 24.805  
+##  Residual              4.021  
+## Number of obs: 18, groups:  Rail, 6
+## Fixed Effects:
+## (Intercept)  
+##        66.5</code></pre>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="fu">ranef</span>(m4)</span></code></pre></div>
+<pre><code>## $Rail
+##   (Intercept)
+## 2   -34.53091
+## 5   -16.35675
+## 1   -12.39148
+## 6    16.02631
+## 3    18.00894
+## 4    29.24388
+## 
+## with conditional variances for &quot;Rail&quot;</code></pre>
+<p>While the <code>lucid()</code> function is primarily a formatting
+function and uses the standard <code>print()</code> functions in R, the
+<code>vc()</code> function defines an additional class for the value of
+the function and has dedicated <code>print</code> methods for the class.
+This was done to allow additional formatting of the results.</p>
+<div id="vc-example-2---analysis-of-federer.diagcheck-data" class="section level3">
+<h3>vc() example 2 - Analysis of federer.diagcheck data</h3>
+<p>The second, more complex example is based on a model in <span class="citation">Federer and Wolfinger (2003)</span> in which orthogonal
+polynomials are used to model trends along the rows and columns of a
+field experiment. The data are available in the <code>agridat</code>
+package <span class="citation">(Wright 2014)</span> as the
+<code>federer.diagcheck</code> data frame. The help page for that data
+shows how to reproduce the analysis of <span class="citation">Federer
+and Wolfinger (2003)</span>. When using the <code>lme4</code> package to
+reproduce the analysis, two different optimizers are available. Do the
+two different optimizers lead to similar estimated variances?</p>
+<p>In the output below, the first column identifies terms in the model,
+the next two columns are the variance and standard deviation from the
+‘bobyqa’ optimizer, while the final two columns are from the
+‘NelderMead’ optimizer. Note, these results are from <code>lme4</code>
+version 1.1-7 and are likely to be different than the results from more
+recent versions of <code>lme4</code>.</p>
+<p>The default output printing is shown first.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="fu">print</span>(out)</span></code></pre></div>
+<pre><code>##           term     vcov-bo  sdcor-bo sep      vcov-ne     sdcor-ne
+## 1  (Intercept)   2869.4469  53.56722     3.228419e+03  56.81917727
+## 2        r1:c3   5531.5724  74.37454     7.688139e+03  87.68203447
+## 3        r1:c2  58225.7678 241.30016     6.974755e+04 264.09761622
+## 4        r1:c1 128004.1561 357.77668     1.074270e+05 327.76064925
+## 5           c8   6455.7495  80.34768     6.787004e+03  82.38327224
+## 6           c6   1399.7294  37.41296     1.636128e+03  40.44907560
+## 7           c4   1791.6507  42.32790     1.226846e+04 110.76308194
+## 8           c3   2548.8847  50.48648     2.686302e+03  51.82954364
+## 9           c2   5941.7908  77.08301     7.644730e+03  87.43414634
+## 10          c1      0.0000   0.00000     1.225143e-03   0.03500204
+## 11         r10   1132.9501  33.65932     1.975505e+03  44.44665149
+## 12          r8   1355.2291  36.81344     1.241429e+03  35.23391157
+## 13          r4   2268.7296  47.63118     2.811241e+03  53.02113582
+## 14          r2    241.7894  15.54958     9.282275e+02  30.46682578
+## 15          r1   9199.9022  95.91612     1.036358e+04 101.80169429
+## 16        &lt;NA&gt;   4412.1096  66.42371     4.126832e+03  64.24042100</code></pre>
+<p>How similar are the variance estimates obtained from the two
+optimization methods? It is difficult to compare the results due to the
+clutter of extra digits, and because of some quirks in the way R formats
+the output. The variances in column 2 are shown in non-scientific
+format, while the variances in column 5 are shown in scientific format.
+The standard deviations are shown with 5 decimal places in column 3 and
+8 decimal places in column 6. (All numbers were stored with 15 digits of
+precision.)</p>
+<p>The <code>lucid()</code> function is now used to show the results in
+the manner of the <code>vc()</code> function.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a><span class="fu">lucid</span>(out, <span class="at">dig=</span><span class="dv">4</span>)</span></code></pre></div>
+<pre><code>##           term  vcov-bo sdcor-bo sep  vcov-ne sdcor-ne
+## 1  (Intercept)   2869      53.57       3228     56.82 
+## 2        r1:c3   5532      74.37       7688     87.68 
+## 3        r1:c2  58230     241.3       69750    264.1  
+## 4        r1:c1 128000     357.8      107400    327.8  
+## 5           c8   6456      80.35       6787     82.38 
+## 6           c6   1400      37.41       1636     40.45 
+## 7           c4   1792      42.33      12270    110.8  
+## 8           c3   2549      50.49       2686     51.83 
+## 9           c2   5942      77.08       7645     87.43 
+## 10          c1      0       0             0      0.035
+## 11         r10   1133      33.66       1976     44.45 
+## 12          r8   1355      36.81       1241     35.23 
+## 13          r4   2269      47.63       2811     53.02 
+## 14          r2    241.8    15.55        928.2   30.47 
+## 15          r1   9200      95.92      10360    101.8  
+## 16        &lt;NA&gt;   4412      66.42       4127     64.24</code></pre>
+<p>The formatting of the variance columns is consistent as is the
+formatting of the standard deviation columns. Fewer digits are shown. It
+is easy to compare the columns and see that the two optimizers are
+giving quite different answers. Note: The Bobyqa results are almost
+identical to the results obtained when using ASREML or SAS.</p>
+<p>Note: Data frames have no quotes, but numeric matrices are printed
+with quotes. Use <code>noquote()</code> to print without quotes, for
+example:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="fu">noquote</span>(<span class="fu">lucid</span>(<span class="fu">as.matrix</span>(<span class="fu">head</span>(mtcars)),<span class="dv">2</span>))</span></code></pre></div>
+<pre><code>##                   mpg cyl disp hp  drat wt  qsec vs am gear carb
+## Mazda RX4         21  6   160  110 3.9  2.6 16   0  1  4    4   
+## Mazda RX4 Wag     21  6   160  110 3.9  2.9 17   0  1  4    4   
+## Datsun 710        23  4   110   93 3.8  2.3 19   1  1  4    1   
+## Hornet 4 Drive    21  6   260  110 3.1  3.2 19   1  0  3    1   
+## Hornet Sportabout 19  8   360  180 3.2  3.4 17   0  0  3    2   
+## Valiant           18  6   220  100 2.8  3.5 20   1  0  3    1</code></pre>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-bates2014lme4" class="csl-entry">
+Bates, Douglas, Martin Maechler, Ben Bolker, and S. Walker. 2014.
+<em><span class="nocase">lme4: Linear mixed-effects models using Eigen
+and S4</span></em>. <a href="https://CRAN.R-project.org/package=lme4">https://CRAN.R-project.org/package=lme4</a>.
+</div>
+<div id="ref-butler2009asreml" class="csl-entry">
+Butler, David. 2009. <em><span class="nocase">asreml: asreml() fits the
+linear mixed model</span></em>. <a href="https://www.vsni.co.uk">www.vsni.co.uk</a>.
+</div>
+<div id="ref-clark1965presentation" class="csl-entry">
+Clark, R. T. 1965. <span>“The Presentation of Numerical Results of
+Experiments for Publication in a Scientific Agricultural
+Journal.”</span> <em>Experimental Agriculture</em> 1: 315–19. <a href="https://doi.org/10.1017/S001447970002161X">https://doi.org/10.1017/S001447970002161X</a>.
+</div>
+<div id="ref-ehrenberg1977rudiments" class="csl-entry">
+Ehrenberg, A. S. C. 1977. <span>“Rudiments of Numeracy.”</span>
+<em>Journal of the Royal Statistical Society. Series A</em>, 277–97. <a href="https://doi.org/10.2307/2344922">https://doi.org/10.2307/2344922</a>.
+</div>
+<div id="ref-farquhar1891economic" class="csl-entry">
+Farquhar, Arthur B., and Henry Farquhar. 1891. <em>Economic and
+Industrial Delusions</em>. New York: G. P. Putnam’s Sons. <a href="https://books.google.com/books?id=BHkpAAAAYAAJ">https://books.google.com/books?id=BHkpAAAAYAAJ</a>.
+</div>
+<div id="ref-federer2003proc" class="csl-entry">
+Federer, Walter T., and Russell D. Wolfinger. 2003. <span>“Handbook of
+Formulas and Software for Plant Geneticists and Breeders.”</span> In,
+edited by Manjit Kang. Haworth Press.
+</div>
+<div id="ref-feinberg2011extracting" class="csl-entry">
+Feinberg, Richard A., and Howard Wainer. 2011. <span>“Extracting
+Sunbeams from Cucumbers.”</span> <em>Journal of Computational and
+Graphical Statistics</em> 20 (4): 793–810. <a href="https://doi.org/10.1198/jcgs.2011.204a">https://doi.org/10.1198/jcgs.2011.204a</a>.
+</div>
+<div id="ref-finney1988data" class="csl-entry">
+Finney, D. J. 1988. <span>“Was This in Your Statistics Textbook?
+<span>II</span>. <span>Data</span> Handling.”</span> <em>Experimental
+Agriculture</em> 24: 343–53. <a href="https://doi.org/10.1017/S0014479700016197">https://doi.org/10.1017/S0014479700016197</a>.
+</div>
+<div id="ref-kozak2011reporting" class="csl-entry">
+Kozak, Marcin, Ricardo Antunes Azevedo, Justyna Jupowicz-Kozak, and
+Wojtek Krzanowski. 2011. <span>“Reporting Numbers in Agriculture and
+Biology: Don’t Overdo the Digits.”</span> <em>Australian Journal of Crop
+Science</em> 5: 1876–81. <a href="http://www.cropj.com/kozak_5_13_2011_1876_1881.pdf">http://www.cropj.com/kozak_5_13_2011_1876_1881.pdf</a>.
+</div>
+<div id="ref-pearce1988manual" class="csl-entry">
+Pearce, S. C., G. M. Clarke, G. V. Dyke, and R. E. Kempson. 1988. <em>A
+Manual of Crop Experimentation</em>. Charles Griffin; Company.
+</div>
+<div id="ref-pinheiro2014nlme" class="csl-entry">
+Pinheiro, Jose, Douglas Bates, Saikat DebRoy, Deepayan Sarkar, and R
+Core Team. 2014. <em><span class="nocase">nlme</span>: Linear and
+Nonlinear Mixed Effects Models</em>. <a href="https://CRAN.R-project.org/package=nlme">https://CRAN.R-project.org/package=nlme</a>.
+</div>
+<div id="ref-robinson2016broom" class="csl-entry">
+Robinson, David. 2016. <em><span class="nocase">broom: Convert
+Statistical Analysis Objects into Tidy Data Frames</span></em>. <a href="https://CRAN.R-project.org/package=broom">https://CRAN.R-project.org/package=broom</a>.
+</div>
+<div id="ref-wainer1997improving" class="csl-entry">
+Wainer, Howard. 1997. <span>“Improving Tabular Displays, with
+<span>NAEP</span> Tables as Examples and Inspirations.”</span>
+<em>Journal of Educational and Behavioral Statistics</em> 22: 1–30. <a href="https://doi.org/10.3102/10769986022001001">https://doi.org/10.3102/10769986022001001</a>.
+</div>
+<div id="ref-wainer2009pictures" class="csl-entry">
+Wainer, Howard, and Mike Larsen. 2009. <span>“Pictures at an
+Exhibition.”</span> <em>Chance</em> 22 (2): 46–54. <a href="https://doi.org/10.1080/09332480.2009.10722958">https://doi.org/10.1080/09332480.2009.10722958</a>.
+</div>
+<div id="ref-wilkinson2014oneway" class="csl-entry">
+Wilkinson, Darren. 2014. <span>“One-Way ANOVA with Fixed and Random
+Effects from a Bayesian Perspective.”</span> <a href="https://darrenjw.wordpress.com/2014/12/22/one-way-anova-with-fixed-and-random-effects-from-a-bayesian-perspective/">https://darrenjw.wordpress.com/2014/12/22/one-way-anova-with-fixed-and-random-effects-from-a-bayesian-perspective/</a>.
+</div>
+<div id="ref-wright2014agridat" class="csl-entry">
+Wright, Kevin. 2014. <em>Agridat: Agricultural Datasets</em>. <a href="https://CRAN.R-project.org/package=agridat">https://CRAN.R-project.org/package=agridat</a>.
+</div>
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
